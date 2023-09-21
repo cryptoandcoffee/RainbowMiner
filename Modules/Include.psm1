@@ -4503,25 +4503,41 @@ function Get-Algorithm {
     param(
         [Parameter(
             Position = 0,
-            ParameterSetName = '',   
+            ParameterSetName = '',
             ValueFromPipeline = $True,
             Mandatory = $false)]
         [String]$Algorithm = "",
         [Parameter(Mandatory = $false)]
         [String]$CoinSymbol = ""
     )
-    if ($Algorithm -eq '*') {$Algorithm}
-    elseif ($Algorithm -match "[,;]") {@($Algorithm -split "\s*[,;]+\s*") | Foreach-Object {Get-Algorithm $_}}
+    if ($Algorithm -eq '*') {
+        $Algorithm
+    }
+    elseif ($Algorithm -match "[,;]") {
+        @($Algorithm -split "\s*[,;]+\s*") | Foreach-Object {Get-Algorithm $_}
+    }
     else {
-        if (-not (Test-Path Variable:Global:GlobalAlgorithms)) {Get-Algorithms -Silent}
+        if (-not (Test-Path Variable:Global:GlobalAlgorithms)) {
+            Get-Algorithms -Silent
+        }
         $Algorithm = $Algorithm -replace "[^a-z0-9]+"
-        if ($Global:GlobalAlgorithms.ContainsKey($Algorithm)) {
-            $Algorithm = $Global:GlobalAlgorithms[$Algorithm]
+        # Case-insensitive search for the key
+        $matchedKey = $Global:GlobalAlgorithms.Keys | Where-Object { $_.ToLower() -eq $Algorithm.ToLower() } | Select-Object -First 1
+        if ($matchedKey) {
+            $Algorithm = $Global:GlobalAlgorithms[$matchedKey]
             if ($CoinSymbol -ne "" -and $Algorithm -eq "Ethash" -and ($DAGSize = Get-EthDAGSize -CoinSymbol $CoinSymbol -Minimum 1) -le 5) {
-                if ($DAGSize -le 2) {$Algorithm = "$($Algorithm)2g"}
-                elseif ($DAGSize -le 3) {$Algorithm = "$($Algorithm)3g"}
-                elseif ($DAGSize -le 4) {$Algorithm = "$($Algorithm)4g"}
-                elseif ($DAGSize -le 5) {$Algorithm = "$($Algorithm)5g"}
+                if ($DAGSize -le 2) {
+                    $Algorithm = "$($Algorithm)2g"
+                }
+                elseif ($DAGSize -le 3) {
+                    $Algorithm = "$($Algorithm)3g"
+                }
+                elseif ($DAGSize -le 4) {
+                    $Algorithm = "$($Algorithm)4g"
+                }
+                elseif ($DAGSize -le 5) {
+                    $Algorithm = "$($Algorithm)5g"
+                }
             }
         } else {
             $Algorithm = (Get-Culture).TextInfo.ToTitleCase($Algorithm)
